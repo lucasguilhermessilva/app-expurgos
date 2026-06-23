@@ -4,146 +4,358 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AUXILIAR ESTAGIARIOS - Expurgos</title> 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; }
-        .btn-copy {
-            background-color: #e0e7ff; color: #4338ca; font-size: 0.75rem;
-            padding: 2px 6px; border-radius: 4px; font-weight: 500;
-            transition: all 0.2s ease;
+
+        /* ============================================================
+           Expurgos — Dark Modern, SELF-CONTAINED (sem depender do CDN).
+           Componentes próprios + camada de utilities do Tailwind usadas
+           no markup, todas tematizadas dark. Hooks de JS preservados.
+           ============================================================ */
+        :root{
+            --bg:#0a0e16;
+            --bg-2:#0c111b;
+            --surface:#111826;
+            --surface-2:#16202f;
+            --surface-3:#1c2740;
+            --line:rgba(255,255,255,.08);
+            --line-2:rgba(255,255,255,.15);
+            --text:#e9eef6;
+            --text-2:#aab6c8;
+            --muted:#7a8aa0;
+            --accent:#34d399;     /* emerald */
+            --accent-2:#22d3ee;   /* cyan */
+            --accent-700:#0f766e;
+            --ok:#34d399;
+            --danger:#f87171;
+            --warn:#fbbf24;
+            --info:#38bdf8;
+            --focus:#38bdf8;
+            --radius:16px;
+            --radius-sm:11px;
+            --shadow:0 16px 40px -20px rgba(0,0,0,.75);
+            --shadow-lg:0 30px 60px -24px rgba(0,0,0,.85);
+            --font-body:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+            --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
         }
-        .btn-copy:hover { background-color: #c7d2fe; }
-        .btn-copy:active { transform: scale(0.95); }
-        .copy-feedback {
-            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-            background-color: #22c55e; color: white; padding: 2px 8px; border-radius: 4px;
-            font-size: 0.75rem; margin-bottom: 4px; opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: none; white-space: nowrap;
+
+        *,*::before,*::after{ box-sizing:border-box; }
+        html{ scroll-behavior:smooth; }
+        body{
+            margin:0; font-family:var(--font-body); color:var(--text); line-height:1.55;
+            background:
+                radial-gradient(900px 460px at 12% -10%, rgba(34,211,238,.10), transparent 60%),
+                radial-gradient(820px 440px at 110% -6%, rgba(52,211,153,.10), transparent 58%),
+                var(--bg);
+            background-attachment:fixed; min-height:100vh;
+            -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
         }
-        .copy-feedback.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-4px);
+        a{ color:var(--accent-2); text-decoration:none; }
+        ::selection{ background:rgba(52,211,153,.3); color:#fff; }
+        ::-webkit-scrollbar{ width:11px; height:11px; }
+        ::-webkit-scrollbar-thumb{ background:#26324a; border-radius:8px; border:2px solid var(--bg); }
+        ::-webkit-scrollbar-thumb:hover{ background:#34435f; }
+        :focus-visible{ outline:3px solid var(--focus); outline-offset:2px; border-radius:8px; }
+        button,a,select,input,#dropzone{ touch-action:manipulation; }
+        button{ font-family:inherit; cursor:pointer; }
+        @media (prefers-reduced-motion: reduce){
+            *,*::before,*::after{ animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; scroll-behavior:auto!important; }
         }
-        #dropzone {
-            border: 2px dashed #cbd5e1;
-            background-color: #f8fafc;
-            transition: all 0.3s ease;
+
+        /* títulos */
+        h1,h2,h3,h4,.step-title,.brand-text h1,.plano-card h3,
+        #card-relatorio-visual h3,#dados-gerais-container .data-titular{
+            letter-spacing:-.015em; font-weight:700;
         }
-        #dropzone.dragover {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
+
+        /* ---------- Faixa da marca ---------- */
+        .brandbar{
+            display:flex; align-items:center; gap:15px; padding:18px 22px;
+            border-radius:var(--radius); position:relative; overflow:hidden;
+            background:linear-gradient(180deg,var(--surface-2),var(--surface));
+            border:1px solid var(--line); border-top:1px solid rgba(52,211,153,.35);
+            box-shadow:var(--shadow);
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .brandbar::after{
+            content:""; position:absolute; inset:0; pointer-events:none;
+            background:radial-gradient(380px 150px at 92% -40%, rgba(34,211,238,.22), transparent 60%);
         }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #3b82f6;
-            border-radius: 50%;
-            width: 2rem;
-            height: 2rem;
-            animation: spin 1s linear infinite;
+        .brand-logo{
+            position:relative; z-index:1; flex-shrink:0; width:46px; height:46px; border-radius:13px;
+            display:grid; place-items:center; font-weight:800; font-size:1.15rem; color:#06231b;
+            background:linear-gradient(135deg,var(--accent),var(--accent-2));
+            box-shadow:0 8px 22px -6px rgba(34,211,238,.6), inset 0 0 0 1px rgba(255,255,255,.2);
         }
-        .status-badge {
-            display: inline-block;
-            padding: 0.25em 0.6em;
-            font-size: 0.8rem;
-            font-weight: 600;
-            border-radius: 9999px;
-            text-transform: uppercase;
+        .brand-text{ position:relative; z-index:1; }
+        .brand-text h1{ font-size:1.4rem; line-height:1.12; color:var(--text); }
+        .brand-text p{ font-size:.8rem; color:var(--text-2); margin-top:3px; font-variant-numeric:tabular-nums; }
+        .brand-chip{
+            position:relative; z-index:1; margin-left:auto; display:inline-flex; align-items:center; gap:8px;
+            padding:7px 13px; border-radius:999px; background:rgba(52,211,153,.08);
+            border:1px solid rgba(52,211,153,.3); font-size:.72rem; font-weight:600;
+            letter-spacing:.05em; color:#9af2cf;
         }
-        .status-sucesso { background-color: #dcfce7; color: #166534; }
-        .status-erro { background-color: #fee2e2; color: #991b1b; }
-        .status-alerta { background-color: #fef9c3; color: #854d0e; }
-        .status-info { background-color: #e0f2fe; color: #075985; }
-        .btn-secundario {
-            background-color: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
-            font-weight: 500;
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-            border-radius: 0.375rem;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            transition: background-color 0.2s ease;
+        .brand-chip .dot{ width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 0 rgba(52,211,153,.6); animation:pulse 2.4s infinite; }
+        @keyframes pulse{ 0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.5);} 50%{box-shadow:0 0 0 6px rgba(52,211,153,0);} }
+
+        .disclaimer{
+            display:flex; gap:11px; align-items:flex-start; margin-top:14px; padding:12px 15px;
+            background:rgba(251,191,36,.07); border:1px solid rgba(251,191,36,.25);
+            border-left:3px solid var(--warn); border-radius:var(--radius-sm);
+            color:#f6dca0; font-size:.82rem; line-height:1.5;
         }
-        .btn-secundario:hover {
-            background-color: #e5e7eb;
+        .disclaimer svg{ flex-shrink:0; width:18px; height:18px; margin-top:1px; color:var(--warn); }
+
+        /* ---------- Cards ---------- */
+        .app-card{
+            background:linear-gradient(180deg,var(--surface),var(--bg-2));
+            border:1px solid var(--line); border-radius:var(--radius);
+            box-shadow:var(--shadow); padding:24px;
+            transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease;
         }
-        .btn-primario-pequeno {
-            background-color: #4f46e5;
-            color: white;
-            font-weight: 500;
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-            border-radius: 0.375rem;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            transition: background-color 0.2s ease;
+        .app-card:hover{ border-color:var(--line-2); box-shadow:var(--shadow-lg); }
+
+        .step-head{ display:flex; align-items:center; gap:13px; margin-bottom:18px; }
+        .step-badge{
+            flex-shrink:0; width:36px; height:36px; border-radius:11px; display:grid; place-items:center;
+            font-weight:700; font-size:1rem; font-variant-numeric:tabular-nums;
+            color:#9af2cf; background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.3);
         }
-        .btn-primario-pequeno:hover {
-            background-color: #4338ca;
+        .step-badge svg{ width:18px; height:18px; }
+        .step-title{ font-size:1.18rem; color:var(--text); }
+        .step-sub{ font-size:.82rem; color:var(--muted); margin-top:1px; }
+
+        /* ---------- Links rápidos (portais externos) ---------- */
+        .btn-link-rapido{
+            display:flex; align-items:center; justify-content:center; gap:9px;
+            padding:0.8rem 1rem; border-radius:12px; font-weight:600; font-size:0.86rem;
+            color:var(--text); text-align:center; text-decoration:none;
+            background:var(--surface-2); border:1px solid var(--line-2); border-left-width:3px;
+            transition:transform .15s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
         }
-        .btn-primario-pequeno:disabled {
-            background-color: #a5b4fc;
-            cursor: not-allowed;
+        .btn-link-rapido::before{ content:""; width:8px; height:8px; border-radius:50%; background:currentColor; box-shadow:0 0 10px currentColor; flex-shrink:0; }
+        .btn-link-rapido:hover{ transform:translateY(-2px); background:var(--surface-3); box-shadow:var(--shadow); }
+        .btn-pje{ border-left-color:#60a5fa; color:#bcd3ff; }
+        .btn-acordo{ border-left-color:var(--accent-2); color:#9be7f5; }
+        .btn-legalone{ border-left-color:var(--warn); color:#fcd98a; }
+        .btn-link-rapido span,.btn-link-rapido{ }
+
+        /* ---------- Botões ---------- */
+        .btn-primario-pequeno{
+            background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#06231b;
+            font-weight:700; padding:0.58rem 1.05rem; font-size:0.875rem; border:none; border-radius:10px;
+            box-shadow:0 10px 24px -10px rgba(34,211,238,.6); transition:transform .15s ease, filter .2s ease;
         }
-        /* Estilo para campos de dados automáticos */
-        .auto-field {
-            background-color: #f9fafb;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-            color: #374151;
+        .btn-primario-pequeno:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+        .btn-primario-pequeno:disabled{ background:#2a3650; color:#7a8aa0; cursor:not-allowed; box-shadow:none; transform:none; filter:none; }
+
+        .btn-secundario{
+            background:var(--surface-2); color:var(--text-2); border:1px solid var(--line-2);
+            font-weight:600; padding:0.52rem 0.9rem; font-size:0.86rem; border-radius:10px;
+            transition:background-color .2s ease, border-color .2s ease, transform .15s ease, color .2s ease;
         }
-        .auto-field.success {
-            border-color: #10b981;
+        .btn-secundario:hover{ background:var(--surface-3); color:var(--text); border-color:#3a4a66; transform:translateY(-1px); }
+        .btn-secundario:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+
+        #btn-analisar{
+            background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#06231b;
+            border:none; border-radius:12px; padding:0.72rem 1.7rem; font-weight:700; font-size:1rem;
+            box-shadow:0 14px 30px -12px rgba(34,211,238,.7); transition:transform .15s ease, filter .2s ease;
         }
-        /* Estilos para os novos botões de link rápido */
-        .btn-link-rapido {
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            color: white;
-            font-weight: 600;
-            font-size: 0.875rem;
-            text-align: center;
-            transition: opacity 0.2s ease;
-            display: inline-block;
+        #btn-analisar:hover:not(:disabled){ transform:translateY(-2px); filter:brightness(1.08); }
+        #btn-analisar:disabled{ background:#2a3650; color:#76859b; box-shadow:none; cursor:not-allowed; }
+
+        /* ---------- Dropzone ---------- */
+        #dropzone{
+            border:2px dashed var(--line-2); border-radius:14px;
+            background:radial-gradient(120% 120% at 50% 0%, rgba(34,211,238,.05), transparent 60%), var(--surface-2);
+            transition:all .25s ease;
         }
-        .btn-link-rapido:hover {
-            opacity: 0.9;
+        #dropzone:hover{ border-color:rgba(52,211,153,.55); background:var(--surface-3); }
+        #dropzone.dragover{ border-color:var(--accent); background:rgba(52,211,153,.08); box-shadow:inset 0 0 0 3px rgba(52,211,153,.14); }
+        .dz-icon{
+            width:58px; height:58px; margin:0 auto; border-radius:14px; display:grid; place-items:center;
+            color:var(--accent); background:rgba(52,211,153,.1); box-shadow:inset 0 0 0 1px rgba(52,211,153,.25);
         }
-        .btn-pje {
-            background-image: linear-gradient(to right, #f97316, #1e3a8a); 
+
+        /* ---------- Spinner ---------- */
+        @keyframes spin{ to{ transform:rotate(360deg);} }
+        .spinner{ border:4px solid rgba(255,255,255,.1); border-left-color:var(--accent); border-radius:50%; width:2.25rem; height:2.25rem; animation:spin .9s linear infinite; }
+
+        /* ---------- Status badges (JS) ---------- */
+        .status-badge{ display:inline-block; padding:0.28em 0.72em; font-size:0.7rem; font-weight:700; border-radius:9999px; text-transform:uppercase; letter-spacing:.05em; border:1px solid transparent; }
+        .status-sucesso{ background:rgba(52,211,153,.14); color:#86efac; border-color:rgba(52,211,153,.35); }
+        .status-erro{ background:rgba(248,113,113,.14); color:#fca5a5; border-color:rgba(248,113,113,.35); }
+        .status-alerta{ background:rgba(251,191,36,.14); color:#fcd34d; border-color:rgba(251,191,36,.35); }
+        .status-info{ background:rgba(56,189,248,.14); color:#7dd3fc; border-color:rgba(56,189,248,.35); }
+
+        /* ---------- Inputs ---------- */
+        .auto-field, input[type="text"], select, textarea{
+            background:var(--surface-2); border:1px solid var(--line-2); border-radius:10px;
+            padding:0.52rem 0.8rem; font-size:0.875rem; color:var(--text);
+            transition:border-color .2s ease, box-shadow .2s ease;
         }
-        .btn-acordo {
-            background-color: #20627e; 
+        .auto-field::placeholder{ color:var(--muted); }
+        .auto-field:focus, input[type="text"]:focus, select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(52,211,153,.18); }
+        select option{ background:var(--surface); color:var(--text); }
+
+        /* ---------- Figuras tabulares (caderneta) ---------- */
+        .data-plano-agencia,.data-plano-conta,.data-plano-saldo,.data-plano-aniversario,
+        .data-plano-referencia,.data-plano-valorbase,
+        .data-total-bruto,.data-total-desconto,.data-total-liquido,
+        #input-cpf,#input-nascimento,#input-telefone,#relatorio-texto{
+            font-family:var(--font-mono); font-variant-numeric:tabular-nums; letter-spacing:-.01em;
         }
-        .btn-legalone {
-            background-color: #ff6a00; 
+
+        /* ---------- Cards de resultado ---------- */
+        .plano-card{ border-radius:14px; position:relative; transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+        .plano-card:hover{ transform:translateY(-2px); box-shadow:var(--shadow); }
+        #planos-container .plano-card{ padding-left:28px; }
+        #planos-container .plano-card::before{ content:""; position:absolute; left:0; top:14px; bottom:14px; width:3px; border-radius:3px; background:linear-gradient(var(--accent),var(--accent-2)); }
+        .total-card{
+            background:linear-gradient(135deg, rgba(34,211,238,.10), rgba(52,211,153,.06)) , var(--surface);
+            border:1px solid rgba(52,211,153,.28)!important; border-radius:14px;
+            box-shadow:var(--shadow); position:relative;
+        }
+        #relatorio-texto{ color:var(--text-2); }
+
+        /* ---------- Copiar ---------- */
+        .btn-copy{ background:rgba(52,211,153,.12); color:#9af2cf; font-size:0.72rem; padding:3px 8px; border-radius:6px; font-weight:600; border:1px solid rgba(52,211,153,.28); transition:all 0.18s ease; }
+        .btn-copy:hover{ background:rgba(52,211,153,.2); }
+        .btn-copy:active{ transform:scale(0.94); }
+        .copy-feedback{ position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:var(--accent); color:#06231b; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; margin-bottom:4px; opacity:0; transition:opacity 0.3s ease, transform 0.3s ease; pointer-events:none; white-space:nowrap; }
+        .copy-feedback.show{ opacity:1; transform:translateX(-50%) translateY(-4px); }
+
+        /* ============================================================
+           CAMADA DE UTILITIES (Tailwind usado no markup) — tema dark
+           ============================================================ */
+        .hidden{ display:none!important; }
+        .block{ display:block; }
+        .flex{ display:flex; }
+        .grid{ display:grid; }
+        .flex-col{ flex-direction:column; }
+        .flex-wrap{ flex-wrap:wrap; }
+        .relative{ position:relative; }
+        .items-center{ align-items:center; }
+        .items-start{ align-items:flex-start; }
+        .justify-between{ justify-content:space-between; }
+        .justify-center{ justify-content:center; }
+        .overflow-x-auto{ overflow-x:auto; }
+        .mx-auto{ margin-left:auto; margin-right:auto; }
+        .w-full{ width:100%; }
+        .w-4{ width:1rem; } .h-4{ height:1rem; }
+        .w-7{ width:1.75rem; } .h-7{ height:1.75rem; }
+        .h-48{ height:12rem; }
+        .max-w-6xl{ max-width:72rem; } .max-w-md{ max-width:28rem; }
+        .cursor-pointer{ cursor:pointer; }
+        .text-center{ text-align:center; } .text-right{ text-align:right; }
+        .list-disc{ list-style-type:disc; } .list-inside{ list-style-position:inside; }
+        .font-mono{ font-family:var(--font-mono); }
+
+        .grid-cols-1{ grid-template-columns:repeat(1,minmax(0,1fr)); }
+        .grid-cols-2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .gap-3{ gap:.75rem; } .gap-4{ gap:1rem; }
+        .gap-x-6{ column-gap:1.5rem; } .gap-y-2{ row-gap:.5rem; } .gap-y-4{ row-gap:1rem; }
+        .space-y-1 > * + *{ margin-top:.25rem; }
+        .space-y-4 > * + *{ margin-top:1rem; }
+
+        .mb-1{ margin-bottom:.25rem; } .mb-2{ margin-bottom:.5rem; } .mb-3{ margin-bottom:.75rem; } .mb-4{ margin-bottom:1rem; } .mb-8{ margin-bottom:2rem; }
+        .mt-2{ margin-top:.5rem; } .mt-3{ margin-top:.75rem; } .mt-4{ margin-top:1rem; } .mt-6{ margin-top:1.5rem; } .mt-8{ margin-top:2rem; }
+        .mr-2{ margin-right:.5rem; }
+        .pt-3{ padding-top:.75rem; } .pt-4{ padding-top:1rem; }
+        .p-3{ padding:.75rem; } .p-4{ padding:1rem; } .p-5{ padding:1.25rem; } .p-6{ padding:1.5rem; }
+        .px-3{ padding-left:.75rem; padding-right:.75rem; } .px-4{ padding-left:1rem; padding-right:1rem; } .px-6{ padding-left:1.5rem; padding-right:1.5rem; }
+        .py-1\.5{ padding-top:.375rem; padding-bottom:.375rem; } .py-2{ padding-top:.5rem; padding-bottom:.5rem; }
+
+        .border{ border:1px solid var(--line); }
+        .border-t{ border-top:1px solid var(--line); }
+        .border-l-4{ border-left-width:4px; border-left-style:solid; }
+        .rounded-lg{ border-radius:.6rem; } .rounded-md{ border-radius:.45rem; }
+        .shadow-md{ box-shadow:var(--shadow); } .shadow-sm{ box-shadow:0 2px 8px -4px rgba(0,0,0,.6); }
+
+        .border-gray-100,.border-gray-200,.border-gray-300{ border-color:var(--line)!important; }
+        .border-blue-200{ border-color:rgba(56,189,248,.3)!important; }
+        .border-amber-300{ border-color:rgba(251,191,36,.3)!important; }
+        .border-red-400{ border-color:rgba(248,113,113,.4)!important; }
+        .border-green-500{ border-color:var(--ok)!important; }
+
+        .text-xs{ font-size:.75rem; } .text-sm{ font-size:.875rem; } .text-base{ font-size:1rem; }
+        .text-lg{ font-size:1.125rem; } .text-xl{ font-size:1.25rem; } .text-2xl{ font-size:1.6rem; line-height:1.15; }
+        .font-medium{ font-weight:500; } .font-semibold{ font-weight:600; } .font-bold{ font-weight:700; }
+
+        .text-white{ color:#fff; }
+        .text-gray-500{ color:var(--muted); } .text-gray-600{ color:var(--text-2); }
+        .text-gray-700{ color:var(--text-2); } .text-gray-800{ color:var(--text); }
+        .text-blue-600{ color:var(--accent-2); } .text-blue-700{ color:var(--accent-2); }
+        .text-indigo-900{ color:#9af2cf; }
+        .text-amber-800{ color:#fcd34d; } .text-amber-900{ color:#fde68a; }
+        .text-red-600{ color:var(--danger); } .text-red-700{ color:var(--danger); } .text-red-800{ color:#fca5a5; }
+        .text-green-600{ color:var(--ok); } .text-green-700{ color:var(--ok); }
+        .text-yellow-600{ color:var(--warn); }
+
+        .bg-white{ background:var(--surface); }
+        .bg-gray-100{ background:var(--surface-2); }
+        .bg-gray-400{ background:#2a3650; }
+        .bg-red-50{ background:rgba(248,113,113,.08); }
+        .bg-amber-50{ background:rgba(251,191,36,.07); }
+        .bg-blue-50{ background:rgba(56,189,248,.08); }
+        .bg-blue-600{ background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#06231b; }
+        .hover\:bg-blue-700:hover{ filter:brightness(1.08); }
+        .disabled\:bg-gray-400:disabled{ background:#2a3650; color:#76859b; }
+
+        .focus\:outline-none:focus{ outline:none; }
+        .focus\:ring-2:focus-visible{ box-shadow:0 0 0 3px rgba(56,189,248,.5); }
+        .focus\:ring-blue-500:focus-visible{ box-shadow:0 0 0 3px rgba(56,189,248,.5); }
+        .focus\:ring-offset-2:focus-visible{ }
+
+        /* responsivos */
+        @media (min-width:640px){
+            .sm\:grid-cols-2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .sm\:grid-cols-3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+            .sm\:grid-cols-4{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+        }
+        @media (min-width:768px){
+            .md\:grid-cols-3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+            .md\:grid-cols-4{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+            .md\:p-8{ padding:2rem; }
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto">
-        <header class="mb-8 p-4 bg-white rounded-lg shadow-sm">
-            <h1 class="text-3xl font-bold text-gray-800">Expurgos</h1>
-            <p class="text-gray-600 mt-1">Aviso: Esta ferramenta otimiza o tempo,
-                 mas não substitui o calculador. O usuário deve sempre conferir os números que a IA usou como base de cálculo.</p>
+        <header class="mb-8">
+            <div class="brandbar">
+                <div class="brand-logo">Ex</div>
+                <div class="brand-text">
+                    <h1>Expurgos Inflacionários</h1>
+                    <p>Auxiliar de cálculo &middot; Bresser &middot; Verão &middot; Collor I &amp; II</p>
+                </div>
+                <span class="brand-chip"><span class="dot"></span> IA &middot; Gemini</span>
+            </div>
+            <div class="disclaimer">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <span><strong>Aviso:</strong> esta ferramenta otimiza o tempo, mas não substitui o calculador. Sempre confira os números que a IA usou como base de cálculo.</span>
+            </div>
         </header>
 
 
-        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4"></h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="app-card mb-8">
+            <div class="step-head">
+                <span class="step-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"></path></svg></span>
+                <div>
+                    <div class="step-title">Acesso rápido</div>
+                    <div class="step-sub">Sistemas e portais usados no fluxo</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <a href="https://sso.cloud.pje.jus.br/auth/realms/pje/protocol/openid-connect/auth?response_type=code&client_id=pje-tjpe-1g-cloud&redirect_uri=https%3A%2F%2Fpje.cloud.tjpe.jus.br%2F1g%2Flogin.seam&state=d7898282-f46e-4271-8887-493bac7142e3&login=true&scope=openid" target="_blank" class="btn-link-rapido btn-pje">
                     PJe - 1º Grau
                 </a>
@@ -161,10 +373,15 @@
 
 
         
-        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">1: Carregar Base de Clientes</h2>
-        
-            <div class="flex items-center space-x-4">
+        <div class="app-card mb-8">
+            <div class="step-head">
+                <span class="step-badge">1</span>
+                <div>
+                    <div class="step-title">Carregar base de clientes</div>
+                    <div class="step-sub">Importe o CSV/Excel com os dados dos titulares</div>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
                 <input type="file" id="csv-upload" class="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
                 <button id="btn-load-csv" class="btn-primario-pequeno">Carregar Ficheiro CSV/Excel</button>
                 <div id="csv-status" class="font-medium">
@@ -174,14 +391,20 @@
         </div>
 
 
-        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">2: Extrato de Poupança</h2>
+        <div class="app-card mb-8">
+            <div class="step-head">
+                <span class="step-badge">2</span>
+                <div>
+                    <div class="step-title">Extrato de poupança</div>
+                    <div class="step-sub">Envie o PDF ou imagem do extrato antigo</div>
+                </div>
+            </div>
             
             <div id="dropzone" class="flex justify-center items-center w-full h-48 rounded-lg text-center p-6 cursor-pointer">
                 <input type="file" id="file-upload" class="hidden" accept="application/pdf, image/png, image/jpeg">
                 <div class="text-gray-500">
-                    <svg class="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                    <p class="mt-2 font-medium text-gray-700">Arraste e solte o arquivo aqui</p>
+                    <div class="dz-icon"><svg class="h-7 w-7" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                    <p class="mt-3 font-semibold text-gray-700">Arraste e solte o arquivo aqui</p>
                     <p class="text-sm">ou <span class="font-semibold text-blue-600">clique para selecionar</span> (PDF ou Imagem)</p>
                     <p id="file-name" class="text-sm mt-2 font-medium text-green-700"></p>
                 </div>
@@ -195,9 +418,15 @@
         </div>
 
         <div id="output-area">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">3: Dados Extraídos (Double Check)</h2>
+            <div class="step-head">
+                <span class="step-badge">3</span>
+                <div>
+                    <div class="step-title">Dados extraídos</div>
+                    <div class="step-sub">Confira (double check) antes de usar os valores</div>
+                </div>
+            </div>
             
-            <div id="loading-state" class="hidden flex-col items-center justify-center bg-white p-10 rounded-lg shadow-sm">
+            <div id="loading-state" class="hidden flex-col items-center justify-center app-card">
                 <div class="spinner"></div>
                 <p id="loading-message" class="mt-4 text-gray-600 font-medium">Analisando extrato com IA...</p>
             </div>
@@ -207,9 +436,9 @@
                 <p class="text-red-700" id="error-message"></p>
             </div>
 
-            <p id="empty-state" class="text-center text-gray-500 bg-white p-10 rounded-lg shadow-sm">Aguardando arquivo para análise.</p>
+            <p id="empty-state" class="text-center text-gray-500 app-card">Aguardando arquivo para análise.</p>
             
-            <div id="dados-gerais-container" class="hidden bg-white p-5 rounded-lg shadow-md border border-gray-200 mb-4">
+            <div id="dados-gerais-container" class="hidden app-card mb-4">
                  <div class="flex justify-between items-start">
                      <div>
                         <h3 class="text-xl font-semibold text-blue-700 mb-2 data-titular"></h3>
@@ -281,8 +510,8 @@
     </div>
 
     <template id="total-template">
-        <div class="plano-card bg-blue-50 p-5 rounded-lg shadow-md border border-blue-200">
-            <h3 class="text-xl font-semibold text-blue-800 mb-4">Resultado Consolidado</h3>
+        <div class="plano-card total-card p-6">
+            <h3 class="text-xl font-bold text-indigo-900 mb-4">Resultado Consolidado</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
                 <div>
@@ -309,7 +538,7 @@
 
 
     <template id="plano-template">
-        <div class="plano-card bg-white p-5 rounded-lg shadow-md border border-gray-200">
+        <div class="plano-card app-card">
             <div class="flex justify-between items-start mb-3">
                 <h3 class="text-lg font-semibold text-gray-800 data-plano-nome"></h3>
                 <span class="status-badge status-alerta data-plano-status">Verificando...</span>
@@ -375,7 +604,7 @@
     </template>
 
     <template id="relatorio-template">
-        <div id="card-relatorio-visual" class="bg-gray-50 p-5 rounded-lg shadow-md border border-gray-200 mt-8">
+        <div id="card-relatorio-visual" class="app-card mt-8">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold text-gray-800">Resumo da Análise</h3>
                 <button id="btn-copy-relatorio" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center">
